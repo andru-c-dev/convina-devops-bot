@@ -3,7 +3,9 @@
 **Date:** Monday, June 29, 2026  
 **Project:** `convina-devops-bot`  
 **Repo:** https://github.com/andrucastro/convina-devops-bot  
-**Production URL:** https://convina-devops-bot-production.up.railway.app
+**Production URL:** https://convina-devops-bot.onrender.com  
+**Previous (Railway):** https://convina-devops-bot-production.up.railway.app  
+**EC2 (optional / in progress):** `3.141.100.66` (HTTP only until domain/HTTPS)
 
 This document records everything built, fixed, and configured during today's development session.
 
@@ -189,14 +191,14 @@ Valid values: `ON_FAILURE`, `ALWAYS`, `NEVER`
 
 ### 8. Configured Slack URLs for Production
 
-**Production domain:** `convina-devops-bot-production.up.railway.app`
+**Production domain:** `convina-devops-bot.onrender.com`
 
 **Slack Request URLs** (both use the same endpoint):
 
 | Setting | URL |
 |---------|-----|
-| Slash Commands → `/dv-release` | `https://convina-devops-bot-production.up.railway.app/slack/events` |
-| Interactivity & Shortcuts | `https://convina-devops-bot-production.up.railway.app/slack/events` |
+| Slash Commands → `/dv-release`, `/dv-add-app`, `/dv-delete-app` | `https://convina-devops-bot.onrender.com/slack/events` |
+| Interactivity & Shortcuts | `https://convina-devops-bot.onrender.com/slack/events` |
 
 Bolt handles slash commands, button clicks, and modals on `/slack/events`.
 
@@ -359,6 +361,8 @@ On submit, request is saved to Supabase (`deployment_requests`) and the user get
 **Open Requests list (Jul 23, 2026):** `/dv-release` menu includes **Open Requests** button. Lists `pending`/`approved` tickets in a Slack table-style code block, with Complete actions (refreshes the list after completion).
 
 **Completed Requests list (Jul 23, 2026):** `/dv-release` menu includes **Completed Requests** button. Lists the **last 5** tickets with status `completed` (newest updated first).
+
+**Render deploy (Jul 23, 2026):** Production moved to Render Free at `https://convina-devops-bot.onrender.com`. Slack Request URLs should use `https://convina-devops-bot.onrender.com/slack/events`. Note: Free tier may cold-start after idle (possible Slack `operation_timeout` on first request). Env vars required: `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_SECRET_KEY`). Start: `npm start`.
 
 ---
 

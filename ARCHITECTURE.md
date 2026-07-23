@@ -12,7 +12,7 @@ For chronological change history, see [`AUTO_README.md`](./AUTO_README.md).
 | Item | Value |
 |------|-------|
 | Repo | https://github.com/andrucastro/convina-devops-bot |
-| Production | https://convina-devops-bot-production.up.railway.app |
+| Production | https://convina-devops-bot.onrender.com |
 | Slack endpoint | `/slack/events` |
 | Entry point | `src/app.js` |
 
@@ -159,8 +159,8 @@ Socket Mode is **not** configured. For local dev without URL switching, see [Loc
 
 | Setting | Value |
 |---------|-------|
-| Slash Commands → `/dv-release` Request URL | `https://convina-devops-bot-production.up.railway.app/slack/events` |
-| Interactivity & Shortcuts Request URL | `https://convina-devops-bot-production.up.railway.app/slack/events` |
+| Slash Commands → `/dv-release` Request URL | `https://convina-devops-bot.onrender.com/slack/events` |
+| Interactivity & Shortcuts Request URL | `https://convina-devops-bot.onrender.com/slack/events` |
 
 ### OAuth Scopes (current)
 
