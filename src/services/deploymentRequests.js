@@ -112,10 +112,26 @@ async function listCompletedDeploymentRequests({ limit = 20 } = {}) {
   return data || [];
 }
 
+async function deleteDeploymentRequest(id) {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .delete()
+    .eq('id', id)
+    .select(TICKET_SELECT)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
 module.exports = {
   createDeploymentRequest,
   updateDeploymentRequest,
   getDeploymentRequest,
+  deleteDeploymentRequest,
   listOpenDeploymentRequests,
   listCompletedDeploymentRequests,
 };
