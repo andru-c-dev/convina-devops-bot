@@ -1,0 +1,40 @@
+---
+description: Read AUTO_README.md for project context before changes; update it after
+alwaysApply: true
+---
+
+# AUTO_README Session Log
+
+`AUTO_README.md` is the living project history and context doc for this repo.  
+For stable architecture, setup, and deployment reference, also read `ARCHITECTURE.md`.
+
+## Before making changes
+
+1. Read `AUTO_README.md` and `ARCHITECTURE.md` at the start of any task that touches this project.
+2. Use them for context: architecture, past fixes, deploy URLs, Slack config, env vars, known issues, and prior decisions.
+3. Do not contradict documented decisions unless the user explicitly asks to change approach.
+
+## After making changes
+
+Update `AUTO_README.md` when you:
+
+- Fix a bug or add a feature
+- Change deployment, env vars, or Slack configuration
+- Add/remove dependencies or project structure
+- Discover a new known issue or workaround
+
+Also update `ARCHITECTURE.md` when you change project structure, Slack integration, deployment model, or core request flows.
+
+Add a new numbered entry under **Chronological Event History** with:
+
+- **What** changed (files, behavior)
+- **Why** it was needed
+- **How** to use or configure it (if relevant)
+
+Also update any affected sections (structure, env vars, checklists, known issues).
+
+## Style
+
+- Keep entries factual and concise
+- Include exact URLs, scopes, and commands when relevant
+- Append new events; do not delete prior history unless the user asks

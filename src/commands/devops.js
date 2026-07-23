@@ -1,21 +1,12 @@
-const { ensureBotInChannel } = require('../utils/channel');
-
 module.exports = (app) => {
-  app.command('/devops', async ({ ack, respond, client, command, context }) => {
+  app.command('/dv-release', async ({ ack, respond }) => {
+    // Ack immediately — Slack requires a response within ~3s
     await ack();
 
+    console.log('[dv-release] Command received');
+
     try {
-      const inChannel = await ensureBotInChannel({
-        client,
-        channelId: command.channel_id,
-        respond,
-        botUserId: context.botUserId,
-      });
-
-      if (!inChannel) {
-        return;
-      }
-
+      // respond() works without the bot being in the channel
       await respond({
         response_type: 'ephemeral',
         text: 'DevOps actions',
@@ -39,20 +30,36 @@ module.exports = (app) => {
                 style: 'primary',
                 action_id: 'create_deployment_request',
               },
+              {
+                type: 'button',
+                text: {
+                  type: 'plain_text',
+                  text: 'Open Requests',
+                },
+                action_id: 'list_open_deployment_requests',
+              },
+              {
+                type: 'button',
+                text: {
+                  type: 'plain_text',
+                  text: 'Completed Requests',
+                },
+                action_id: 'list_completed_deployment_requests',
+              },
             ],
           },
         ],
       });
     } catch (error) {
-      console.error('[devops] Command failed:', error.data?.error || error.message);
+      console.error('[dv-release] Command failed:', error.data?.error || error.message);
 
       try {
         await respond({
           response_type: 'ephemeral',
-          text: ':warning: Something went wrong running `/devops`. Please try again in a moment.',
+          text: ':warning: Something went wrong running `/dv-release`. Please try again in a moment.',
         });
       } catch (respondError) {
-        console.error('[devops] Failed to send error message:', respondError.message);
+        console.error('[dv-release] Failed to send error message:', respondError.message);
       }
     }
   });
