@@ -3,6 +3,7 @@ const {
   createDeploymentRequest,
   updateDeploymentRequest,
   getDeploymentRequest,
+  deleteDeploymentRequest,
   listOpenDeploymentRequests,
   listCompletedDeploymentRequests,
 } = require('../services/deploymentRequests');
@@ -179,7 +180,7 @@ function buildRequestsListBlocks(
   {
     title,
     emptyMessage,
-    showCompleteActions = false,
+    showOpenActions = false,
   } = {},
 ) {
   if (!tickets.length) {
@@ -227,7 +228,7 @@ function buildRequestsListBlocks(
     },
   ];
 
-  if (!showCompleteActions) {
+  if (!showOpenActions) {
     return blocks;
   }
 
@@ -235,28 +236,53 @@ function buildRequestsListBlocks(
 
   for (const ticket of actionable) {
     const label = ticketLabel(ticket);
+    const actionValue = JSON.stringify({ id: ticket.id, source: 'list' });
+
     blocks.push({
       type: 'section',
       text: {
         type: 'mrkdwn',
         text: `*${label}* · ${getTicketAppName(ticket)} · ${formatStatus(ticket.status)}`,
       },
-      accessory: {
-        type: 'button',
-        text: { type: 'plain_text', text: 'Complete' },
-        style: 'primary',
-        action_id: 'deployment_mark_completed',
-        value: JSON.stringify({ id: ticket.id, source: 'list' }),
-        confirm: {
-          title: { type: 'plain_text', text: 'Mark as completed?' },
-          text: {
-            type: 'mrkdwn',
-            text: `Mark ticket \`${label}\` as completed?`,
+    });
+
+    blocks.push({
+      type: 'actions',
+      block_id: `open_req_${ticket.id}`.slice(0, 255),
+      elements: [
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: 'Complete' },
+          style: 'primary',
+          action_id: 'deployment_mark_completed',
+          value: actionValue,
+          confirm: {
+            title: { type: 'plain_text', text: 'Mark as completed?' },
+            text: {
+              type: 'mrkdwn',
+              text: `Mark ticket \`${label}\` as completed?`,
+            },
+            confirm: { type: 'plain_text', text: 'Yes, complete it' },
+            deny: { type: 'plain_text', text: 'Cancel' },
           },
-          confirm: { type: 'plain_text', text: 'Yes, complete it' },
-          deny: { type: 'plain_text', text: 'Cancel' },
         },
-      },
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: 'Delete' },
+          style: 'danger',
+          action_id: 'deployment_delete_request',
+          value: actionValue,
+          confirm: {
+            title: { type: 'plain_text', text: 'Delete request?' },
+            text: {
+              type: 'mrkdwn',
+              text: `Permanently delete ticket \`${label}\`? This cannot be undone.`,
+            },
+            confirm: { type: 'plain_text', text: 'Yes, delete it' },
+            deny: { type: 'plain_text', text: 'Cancel' },
+          },
+        },
+      ],
     });
   }
 
@@ -279,7 +305,7 @@ function buildOpenRequestsBlocks(tickets) {
   return buildRequestsListBlocks(tickets, {
     title: ':clipboard: *Open deployment requests*',
     emptyMessage: ':information_source: *No open deployment requests.*',
-    showCompleteActions: true,
+    showOpenActions: true,
   });
 }
 
@@ -287,7 +313,7 @@ function buildCompletedRequestsBlocks(tickets) {
   const blocks = buildRequestsListBlocks(tickets, {
     title: ':white_check_mark: *Completed deployment requests*',
     emptyMessage: ':information_source: *No completed deployment requests.*',
-    showCompleteActions: false,
+    showOpenActions: false,
   });
 
   if (tickets.length) {
@@ -305,7 +331,7 @@ function buildCompletedRequestsBlocks(tickets) {
   return blocks;
 }
 
-function parseMarkCompletedValue(rawValue) {
+function parseActionValue(rawValue) {
   try {
     const parsed = JSON.parse(rawValue);
     if (parsed?.id) {
@@ -322,6 +348,17 @@ function parseMarkCompletedValue(rawValue) {
     ticketId: rawValue,
     source: 'detail',
   };
+}
+
+async function deleteChannelTicketMessage(client, ticket) {
+  if (!ticket.channel_id || !ticket.message_ts) {
+    return;
+  }
+
+  await client.chat.delete({
+    channel: ticket.channel_id,
+    ts: ticket.message_ts,
+  });
 }
 
 module.exports = (app) => {
@@ -566,7 +603,7 @@ module.exports = (app) => {
   app.action('deployment_mark_completed', async ({ ack, body, respond, client }) => {
     await ack();
 
-    const { ticketId, source } = parseMarkCompletedValue(body.actions?.[0]?.value);
+    const { ticketId, source } = parseActionValue(body.actions?.[0]?.value);
 
     try {
       const existing = await getDeploymentRequest(ticketId);
@@ -633,6 +670,54 @@ module.exports = (app) => {
         replace_original: false,
         response_type: 'ephemeral',
         text: ':warning: Failed to mark the ticket as completed. Please try again.',
+      });
+    }
+  });
+
+  app.action('deployment_delete_request', async ({ ack, body, respond, client }) => {
+    await ack();
+
+    const { ticketId, source } = parseActionValue(body.actions?.[0]?.value);
+
+    try {
+      const ticket = await deleteDeploymentRequest(ticketId);
+
+      console.log('Deployment request deleted:', {
+        id: ticket.id,
+        label: ticketLabel(ticket),
+      });
+
+      try {
+        await deleteChannelTicketMessage(client, ticket);
+      } catch (deleteError) {
+        console.error(
+          '[deployment] Failed to delete channel message:',
+          deleteError.data?.error || deleteError.message,
+        );
+      }
+
+      if (source === 'list') {
+        const tickets = await listOpenDeploymentRequests({ limit: 20 });
+        await respond({
+          replace_original: true,
+          text: `Open deployment requests (${tickets.length})`,
+          blocks: buildOpenRequestsBlocks(tickets),
+        });
+        return;
+      }
+
+      await respond({
+        replace_original: true,
+        response_type: 'ephemeral',
+        text: `:wastebasket: Deleted deployment request \`${ticketLabel(ticket)}\`.`,
+      });
+    } catch (error) {
+      console.error('[deployment] Failed to delete request:', error.message || error);
+
+      await respond({
+        replace_original: false,
+        response_type: 'ephemeral',
+        text: ':warning: Failed to delete the deployment request. Please try again.',
       });
     }
   });

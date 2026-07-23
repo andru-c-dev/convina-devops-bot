@@ -339,6 +339,7 @@ Modal submit
   → insert into deployment_requests
   → ephemeral Slack confirmation with DEP-<ticket_number>
   → "Mark as Completed" button updates status → completed and refreshes the message
+  → Open Requests list also offers Delete (removes DB row + channel message when possible)
 ```
 
 If the table was created before `completed` was added, run `sql/add_completed_status.sql`.
@@ -350,6 +351,7 @@ If the table was created before `completed` was added, run `sql/add_completed_st
 - [x] Persist requests to a database (Supabase)
 - [x] Quick action: Mark as Completed on ticket summary
 - [x] Open Requests list from `/dv-release`
+- [x] Delete open request from Open Requests list
 - [x] Completed Requests list from `/dv-release`
 - [x] Post trackable confirmation message to a DevOps channel
 - [ ] More status buttons (approve / reject)

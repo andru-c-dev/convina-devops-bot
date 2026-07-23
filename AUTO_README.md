@@ -314,7 +314,7 @@ Shows an ephemeral message with:
 
 - Prompt: *"What would you like to do?"*
 - Button: **Create Deployment Request**
-- Button: **Open Requests** — table of open tickets (`pending` / `approved`) with Complete actions
+- Button: **Open Requests** — table of open tickets (`pending` / `approved`) with Complete and Delete actions
 - Button: **Completed Requests** — last 5 completed tickets
 
 Formerly `/devops` (renamed Jul 22, 2026).
@@ -373,6 +373,8 @@ On submit, request is saved to Supabase (`deployment_requests`) and the user get
 **DB cleanup script (Jul 23, 2026):** `sql/clear_deployment_requests.sql` truncates `deployment_requests` and resets ticket numbers (`DEP-1` starts over). Does not delete `apps` unless you uncomment that line.
 
 **Channel notifications (Jul 23, 2026):** New tickets are posted publicly with `chat.postMessage` (visible to everyone in the channel), including requester mention and Mark as Completed. Stores `message_ts` so completing updates the same channel message. Bot must be invited to the channel. Fallback ephemeral if post fails.
+
+**Delete open request (Jul 23, 2026):** Open Requests list shows **Complete** and **Delete** per ticket (with confirm). Delete removes the row from Supabase and tries to remove the channel ticket message.
 
 ---
 
