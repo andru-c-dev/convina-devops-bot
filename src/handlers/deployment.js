@@ -84,6 +84,7 @@ function formatStatus(status) {
 function buildTicketBlocks(ticket, { showActions = false, actionSource = 'detail' } = {}) {
   const label = ticketLabel(ticket);
   const isCompleted = ticket.status === 'completed';
+  const requestedBy = ticket.requested_by ? `<@${ticket.requested_by}>` : 'Unknown';
 
   const blocks = [
     {
@@ -93,11 +94,12 @@ function buildTicketBlocks(ticket, { showActions = false, actionSource = 'detail
         text: [
           isCompleted
             ? `:white_check_mark: *Deployment request completed*`
-            : `:white_check_mark: *Deployment request created*`,
+            : `:bell: *New deployment request*`,
           `*Ticket:* \`${label}\``,
           `*App/Service:* ${getTicketAppName(ticket)}`,
           `*Environment:* ${ticket.environment}`,
           `*Batch:* \`${getTicketBatchLabel(ticket)}\``,
+          `*Requested by:* ${requestedBy}`,
         ].join('\n'),
       },
     },
@@ -136,6 +138,40 @@ function buildTicketBlocks(ticket, { showActions = false, actionSource = 'detail
   }
 
   return blocks;
+}
+
+async function publishTicketToChannel(client, ticket, channelId) {
+  const label = ticketLabel(ticket);
+  const result = await client.chat.postMessage({
+    channel: channelId,
+    text: `New deployment request ${label} from <@${ticket.requested_by}>`,
+    blocks: buildTicketBlocks(ticket, { showActions: true, actionSource: 'channel' }),
+  });
+
+  if (result.ts) {
+    await updateDeploymentRequest(ticket.id, {
+      message_ts: result.ts,
+      channel_id: channelId,
+    });
+  }
+
+  return result;
+}
+
+async function refreshChannelTicketMessage(client, ticket) {
+  if (!ticket.channel_id || !ticket.message_ts) {
+    return;
+  }
+
+  await client.chat.update({
+    channel: ticket.channel_id,
+    ts: ticket.message_ts,
+    text: `Deployment request ${ticketLabel(ticket)} — ${ticket.status}`,
+    blocks: buildTicketBlocks(ticket, {
+      showActions: ticket.status !== 'completed',
+      actionSource: 'channel',
+    }),
+  });
 }
 
 function buildRequestsListBlocks(
@@ -445,12 +481,20 @@ module.exports = (app) => {
       console.log('Deployment request created:', { id: ticket.id, label, ...request });
 
       if (channelId) {
-        await client.chat.postEphemeral({
-          channel: channelId,
-          user: body.user.id,
-          text: `Created deployment request ${label}`,
-          blocks: buildTicketBlocks(ticket, { showActions: true }),
-        });
+        try {
+          await publishTicketToChannel(client, ticket, channelId);
+        } catch (notifyError) {
+          console.error('[deployment] Failed to post channel message:', notifyError.data?.error || notifyError.message);
+
+          // Fallback so the creator still gets feedback if the bot isn't in the channel
+          await client.chat.postEphemeral({
+            channel: channelId,
+            user: body.user.id,
+            text:
+              `:warning: Ticket \`${label}\` was created, but I couldn't post it in this channel. ` +
+              'Invite the bot with `/invite @Convina DevOps` (or add the app in channel Integrations), then try again.',
+          });
+        }
       }
     } catch (error) {
       console.error('[deployment] Failed to create request:', error.message || error);
@@ -519,7 +563,7 @@ module.exports = (app) => {
     }
   });
 
-  app.action('deployment_mark_completed', async ({ ack, body, respond }) => {
+  app.action('deployment_mark_completed', async ({ ack, body, respond, client }) => {
     await ack();
 
     const { ticketId, source } = parseMarkCompletedValue(body.actions?.[0]?.value);
@@ -553,6 +597,15 @@ module.exports = (app) => {
         label: ticketLabel(ticket),
       });
 
+      try {
+        await refreshChannelTicketMessage(client, ticket);
+      } catch (updateError) {
+        console.error(
+          '[deployment] Failed to update channel message:',
+          updateError.data?.error || updateError.message,
+        );
+      }
+
       if (source === 'list') {
         const tickets = await listOpenDeploymentRequests({ limit: 20 });
         await respond({
@@ -560,6 +613,11 @@ module.exports = (app) => {
           text: `Open deployment requests (${tickets.length})`,
           blocks: buildOpenRequestsBlocks(tickets),
         });
+        return;
+      }
+
+      if (source === 'channel') {
+        // Channel message already updated above
         return;
       }
 

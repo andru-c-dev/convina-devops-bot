@@ -351,7 +351,7 @@ If the table was created before `completed` was added, run `sql/add_completed_st
 - [x] Quick action: Mark as Completed on ticket summary
 - [x] Open Requests list from `/dv-release`
 - [x] Completed Requests list from `/dv-release`
-- [ ] Post trackable confirmation message to a DevOps channel
+- [x] Post trackable confirmation message to a DevOps channel
 - [ ] More status buttons (approve / reject)
 - [ ] Trigger CI/CD pipeline (GitHub Actions, Railway, etc.)
 - [ ] Socket Mode for local development

@@ -364,6 +364,10 @@ On submit, request is saved to Supabase (`deployment_requests`) and the user get
 
 **Render deploy (Jul 23, 2026):** Production moved to Render Free at `https://convina-devops-bot.onrender.com`. Slack Request URLs should use `https://convina-devops-bot.onrender.com/slack/events`. Note: Free tier may cold-start after idle (possible Slack `operation_timeout` on first request). Env vars required: `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_SECRET_KEY`). Start: `npm start`.
 
+**DB cleanup script (Jul 23, 2026):** `sql/clear_deployment_requests.sql` truncates `deployment_requests` and resets ticket numbers (`DEP-1` starts over). Does not delete `apps` unless you uncomment that line.
+
+**Channel notifications (Jul 23, 2026):** New tickets are posted publicly with `chat.postMessage` (visible to everyone in the channel), including requester mention and Mark as Completed. Stores `message_ts` so completing updates the same channel message. Bot must be invited to the channel. Fallback ephemeral if post fails.
+
 ---
 
 ## Known Issues & Notes
