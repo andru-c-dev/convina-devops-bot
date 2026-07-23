@@ -1,4 +1,4 @@
-const { createApp, deleteApp } = require('../services/apps');
+const { createApp, updateApp, deleteApp } = require('../services/apps');
 
 function getChannelId(view) {
   try {
@@ -62,6 +62,66 @@ module.exports = (app) => {
           isDuplicate
             ? `:warning: An app named *${name}* already exists.`
             : ':warning: Failed to add the app. Please try again.',
+        );
+      } catch (notifyError) {
+        console.error('[apps] Failed to notify user:', notifyError.message);
+      }
+    }
+  });
+
+  app.view('edit_app_modal', async ({ ack, view, body, client }) => {
+    const appId = view.state.values.app.app_select.selected_option?.value;
+    const name = view.state.values.app_name.app_name_input.value?.trim();
+
+    if (!appId) {
+      await ack({
+        response_action: 'errors',
+        errors: {
+          app: 'Please select an app',
+        },
+      });
+      return;
+    }
+
+    if (!name) {
+      await ack({
+        response_action: 'errors',
+        errors: {
+          app_name: 'Please enter a new app or service name',
+        },
+      });
+      return;
+    }
+
+    await ack();
+
+    const channelId = getChannelId(view);
+    const oldName = view.state.values.app.app_select.selected_option.text?.text || 'selected app';
+
+    try {
+      const appRow = await updateApp(appId, name);
+
+      console.log('App updated:', { from: oldName, to: appRow });
+
+      await notifyUser(
+        client,
+        channelId,
+        body.user.id,
+        `:white_check_mark: App *${oldName}* was renamed to *${appRow.name}*.`,
+      );
+    } catch (error) {
+      console.error('[apps] Failed to update app:', error.message || error);
+
+      const isDuplicate = error.code === '23505' || /duplicate|unique/i.test(error.message || '');
+
+      try {
+        await notifyUser(
+          client,
+          channelId,
+          body.user.id,
+          isDuplicate
+            ? `:warning: An app named *${name}* already exists.`
+            : ':warning: Failed to rename the app. Please try again.',
         );
       } catch (notifyError) {
         console.error('[apps] Failed to notify user:', notifyError.message);

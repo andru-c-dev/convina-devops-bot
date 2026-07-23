@@ -47,6 +47,29 @@ async function createApp(name) {
   return data;
 }
 
+async function updateApp(id, name) {
+  const trimmed = String(name || '').trim();
+
+  if (!trimmed) {
+    const error = new Error('App name is required');
+    error.code = 'validation_error';
+    throw error;
+  }
+
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update({ name: trimmed })
+    .eq('id', id)
+    .select('id, name')
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
 async function deleteApp(id) {
   const { data, error } = await supabase
     .from(TABLE)
@@ -66,5 +89,6 @@ module.exports = {
   listApps,
   getApp,
   createApp,
+  updateApp,
   deleteApp,
 };

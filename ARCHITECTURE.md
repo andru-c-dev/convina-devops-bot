@@ -89,12 +89,12 @@ convina-devops-bot/
 │   ├── app.js                  # Bootstraps Bolt, registers modules, starts server
 │   ├── commands/               # Slash command handlers
 │   │   └── devops.js           # /dv-release command
-│   │   └── apps.js             # /dv-add-app, /dv-delete-app
+│   │   └── apps.js             # /dv-add-app, /dv-edit-app, /dv-delete-app
 │   ├── db/
 │   │   └── supabase.js         # Supabase client (secret key)
 │   ├── handlers/               # Interactive handlers (actions, views)
 │   │   └── deployment.js       # Deployment button + modal
-│   │   └── apps.js             # Add/delete app modal submissions
+│   │   └── apps.js             # Add/edit/delete app modal submissions
 │   ├── services/
 │   │   └── deploymentRequests.js # Ticket create/update/get
 │   │   └── apps.js             # Apps CRUD
@@ -117,11 +117,11 @@ convina-devops-bot/
 |--------|------|
 | `app.js` | Create Bolt `App`, load env, register commands/handlers, listen on `PORT` |
 | `commands/devops.js` | Handle `/dv-release`; show ephemeral action menu |
-| `commands/apps.js` | Handle `/dv-add-app` and `/dv-delete-app` modals |
+| `commands/apps.js` | Handle `/dv-add-app`, `/dv-edit-app`, and `/dv-delete-app` modals |
 | `handlers/deployment.js` | Open deployment modal; save ticket; confirm to user |
-| `handlers/apps.js` | Persist add/delete app modal submissions |
+| `handlers/apps.js` | Persist add/edit/delete app modal submissions |
 | `db/supabase.js` | Supabase client using secret/service role key |
-| `services/apps.js` | List/create/delete apps |
+| `services/apps.js` | List/create/update/delete apps |
 | `services/deploymentRequests.js` | Persist and fetch deployment tickets |
 | `utils/channel.js` | Verify bot channel membership; show invite instructions |
 
@@ -159,7 +159,7 @@ Socket Mode is **not** configured. For local dev without URL switching, see [Loc
 
 | Setting | Value |
 |---------|-------|
-| Slash Commands → `/dv-release` Request URL | `https://convina-devops-bot.onrender.com/slack/events` |
+| Slash Commands → `/dv-release`, `/dv-add-app`, `/dv-edit-app`, `/dv-delete-app` Request URL | `https://convina-devops-bot.onrender.com/slack/events` |
 | Interactivity & Shortcuts Request URL | `https://convina-devops-bot.onrender.com/slack/events` |
 
 ### OAuth Scopes (current)

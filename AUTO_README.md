@@ -197,7 +197,7 @@ Valid values: `ON_FAILURE`, `ALWAYS`, `NEVER`
 
 | Setting | URL |
 |---------|-----|
-| Slash Commands → `/dv-release`, `/dv-add-app`, `/dv-delete-app` | `https://convina-devops-bot.onrender.com/slack/events` |
+| Slash Commands → `/dv-release`, `/dv-add-app`, `/dv-edit-app`, `/dv-delete-app` | `https://convina-devops-bot.onrender.com/slack/events` |
 | Interactivity & Shortcuts | `https://convina-devops-bot.onrender.com/slack/events` |
 
 Bolt handles slash commands, button clicks, and modals on `/slack/events`.
@@ -323,6 +323,10 @@ Formerly `/devops` (renamed Jul 22, 2026).
 
 Opens a modal to create a new row in the `apps` table (name input).
 
+### `/dv-edit-app` Slash Command
+
+Opens a modal with an apps dropdown and a new-name field; renames the selected app. Blocked if the new name already exists.
+
 ### `/dv-delete-app` Slash Command
 
 Opens a modal with an apps dropdown and deletes the selected app. Blocked if the app is referenced by existing deployment tickets.
@@ -354,6 +358,8 @@ On submit, request is saved to Supabase (`deployment_requests`) and the user get
 - `/dv-delete-app` — modal dropdown to delete an app (blocked if referenced by tickets)
 - Register both slash commands in Slack app settings with Request URL `.../slack/events`
 
+**Edit app command (Jul 23, 2026):** `/dv-edit-app` — modal with apps dropdown + new name field; updates `apps.name`. Duplicate names are rejected. Register the slash command in Slack with Request URL `.../slack/events`.
+
 **Command rename (Jul 22, 2026):** `/devops` → `/dv-release`. Update/create the slash command in Slack app settings; remove old `/devops` if unused.
 
 **Note:** Each Slack slash command has its **own** Request URL. `/dv-release` must point at the same `/slack/events` URL as `/dv-add-app` (ngrok locally). Wrong URL → `operation_timeout`. Channel membership check was removed from `/dv-release` because `respond()` does not require the bot in-channel.
@@ -382,7 +388,7 @@ On submit, request is saved to Supabase (`deployment_requests`) and the user get
 
 - [x] App installed to workspace
 - [x] Slash command `/dv-release` created (formerly `/devops`)
-- [ ] Slash commands `/dv-add-app` and `/dv-delete-app` created (Request URL → `/slack/events`)
+- [ ] Slash commands `/dv-add-app`, `/dv-edit-app`, and `/dv-delete-app` created (Request URL → `/slack/events`)
 - [x] Request URL points to Railway `/slack/events` (or ngrok for local)
 - [x] Interactivity enabled, URL points to Railway `/slack/events`
 - [x] Bot token scopes: `commands`, `chat:write`, etc.
